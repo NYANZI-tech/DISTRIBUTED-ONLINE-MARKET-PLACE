@@ -1,0 +1,28 @@
+const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const app = express();
+app.use(express.json());
+
+const users = []; // Mock DB
+
+app.post('/register', async (req, res) => {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const user = { email: req.body.email, password: hashedPassword };
+    users.push(user);
+    res.status(201).send('User Registered');
+});
+
+app.post('/login', async (req, res) => {
+    const user = users.find(u => u.email === req.body.email);
+    if (user == null) return res.status(400).send('Cannot find user');
+    
+    if (await bcrypt.compare(req.body.password, user.password)) {
+        const token = jwt.sign({ email: user.email }, 'SECRET_KEY');
+        res.json({ token });
+    } else {
+        res.status(403).send('Login failed');
+    }
+});
+
+app.listen(4000, () => console.log('Auth Service listening on 4000'));
